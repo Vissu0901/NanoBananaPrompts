@@ -10,7 +10,7 @@ app.secret_key = 'banana_nano_secret_key'
 
 # MongoDB Configuration
 app.config["MONGO_URI"] = "mongodb+srv://viswanathvarikutivissu_db_user:OcPz6nWdSuA3LZVl@cluster0.r651jwd.mongodb.net/banana_prompts?appName=Cluster0"
-mongo = PyMongo(app, tlsCAFile=certifi.where())
+mongo = PyMongo(app)
 fs = gridfs.GridFS(mongo.db)
 
 # Admin Credentials
@@ -19,15 +19,28 @@ ADMIN_PASSWORD = "Admin@1998"
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
-    grid_out = fs.find_one({'filename': filename})
-    if grid_out:
-        return send_file(grid_out, mimetype=grid_out.content_type or 'image/png', download_name=filename)
-    return "Image not found", 404
+    try:
+        grid_out = fs.find_one({'filename': filename})
+        if grid_out:
+            return send_file(grid_out, mimetype=grid_out.content_type or 'image/png', download_name=filename)
+        return "Image not found", 404
+    except Exception as e:
+        return f"Error retrieving image: {str(e)}", 500
 
 @app.route('/')
 def home():
-    prompts = mongo.db.prompts.find()
-    return render_template('index.html', prompts=prompts)
+    try:
+        # Test connection with a quick command
+        # mongo.db.command('ping')
+        prompts = mongo.db.prompts.find()
+        return render_template('index.html', prompts=prompts)
+    except Exception as e:
+        return f"""
+        <h1>Database Connection Error</h1>
+        <p>Could not connect to MongoDB. Please ensure you have whitelisted the IP address in MongoDB Atlas.</p>
+        <p><strong>Error Details:</strong> {str(e)}</p>
+        <p><em>Go to MongoDB Atlas -> Network Access -> Add IP Address -> Allow Access from Anywhere (0.0.0.0/0)</em></p>
+        """, 500
 
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
