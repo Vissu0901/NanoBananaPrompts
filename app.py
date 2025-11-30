@@ -1,36 +1,16 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash, session, send_from_directory
-from flask_sqlalchemy import SQLAlchemy
+from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file
+from flask_pymongo import PyMongo
 from werkzeug.utils import secure_filename
+import gridfs
 
 app = Flask(__name__)
 app.secret_key = 'banana_nano_secret_key'
 
-# Configuration for Vercel (Read-only file system handling)
-if os.environ.get('VERCEL'):
-    app.instance_path = '/tmp'
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/banana_prompts.db'
-    app.config['UPLOAD_FOLDER'] = '/tmp/uploads'
-else:
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///banana_prompts.db'
-    app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploads')
-
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# Ensure upload folder exists
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-
-db = SQLAlchemy(app)
-
-# Model
-class Prompt(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    image_filename = db.Column(db.String(100), nullable=False)
-    prompt_text = db.Column(db.Text, nullable=False)
-
-# Create tables
-with app.app_context():
-    db.create_all()
+# MongoDB Configuration
+app.config["MONGO_URI"] = "mongodb+srv://viswanathvarikutivissu_db_user:OcPz6nWdSuA3LZVl@cluster0.r651jwd.mongodb.net/banana_prompts?appName=Cluster0"
+mongo = PyMongo(app)
+fs = gridfs.GridFS(mongo.db)
 
 # Admin Credentials
 ADMIN_USERNAME = "Admin"
@@ -38,11 +18,14 @@ ADMIN_PASSWORD = "Admin@1998"
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    grid_out = fs.find_one({'filename': filename})
+    if grid_out:
+        return send_file(grid_out, mimetype=grid_out.content_type or 'image/png', download_name=filename)
+    return "Image not found", 404
 
 @app.route('/')
 def home():
-    prompts = Prompt.query.all()
+    prompts = mongo.db.prompts.find()
     return render_template('index.html', prompts=prompts)
 
 @app.route('/admin', methods=['GET', 'POST'])
@@ -79,11 +62,22 @@ def dashboard():
         
         if file:
             filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            print(f"DEBUG: Processing upload for {filename}")
             
-            new_prompt = Prompt(image_filename=filename, prompt_text=prompt_text)
-            db.session.add(new_prompt)
-            db.session.commit()
+            # Check if file already exists in GridFS to avoid duplicates or handle overwrites
+            if fs.exists(filename=filename):
+                 print(f"DEBUG: File {filename} exists, deleting old version")
+                 old_file = fs.find_one({'filename': filename})
+                 if old_file:
+                     fs.delete(old_file._id)
+
+            file_id = fs.put(file, filename=filename, content_type=file.content_type)
+            print(f"DEBUG: File saved to GridFS with ID: {file_id}")
+            
+            mongo.db.prompts.insert_one({
+                'image_filename': filename,
+                'prompt_text': prompt_text
+            })
             flash('Prompt uploaded successfully!', 'success')
             return redirect(url_for('dashboard'))
             
