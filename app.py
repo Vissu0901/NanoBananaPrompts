@@ -45,8 +45,11 @@ def home():
     prompts = Prompt.query.all()
     return render_template('index.html', prompts=prompts)
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
+@app.route('/admin', methods=['GET', 'POST'])
+def admin():
+    if session.get('admin_logged_in'):
+        return redirect(url_for('dashboard'))
+        
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -61,7 +64,7 @@ def login():
 @app.route('/dashboard', methods=['GET', 'POST'])
 def dashboard():
     if not session.get('admin_logged_in'):
-        return redirect(url_for('login'))
+        return redirect(url_for('admin'))
     
     if request.method == 'POST':
         if 'image' not in request.files:
