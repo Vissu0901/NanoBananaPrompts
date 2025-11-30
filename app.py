@@ -5,9 +5,17 @@ from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = 'banana_nano_secret_key'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///banana_prompts.db'
+
+# Configuration for Vercel (Read-only file system handling)
+if os.environ.get('VERCEL'):
+    app.instance_path = '/tmp'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/banana_prompts.db'
+    app.config['UPLOAD_FOLDER'] = '/tmp/uploads'
+else:
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///banana_prompts.db'
+    app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploads')
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploads')
 
 # Ensure upload folder exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
