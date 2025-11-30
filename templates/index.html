@@ -12,7 +12,7 @@
     {% for prompt in prompts %}
     <div class="card">
         <div class="card-image">
-            <img src="{{ url_for('static', filename='uploads/' + prompt.image_filename) }}" alt="Prompt Image">
+            <img src="{{ url_for('uploaded_file', filename=prompt.image_filename) }}" alt="Prompt Image">
         </div>
         <div class="card-content">
             <p class="prompt-text">{{ prompt.prompt_text }}</p>
