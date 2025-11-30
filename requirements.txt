@@ -1,5 +1,6 @@
 Flask
 Flask-PyMongo
-pymongo
+pymongo[srv]
 werkzeug
 certifi
+dnspython
