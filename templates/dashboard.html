@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+    <div class="dashboard-header">
+        <h2>Upload New Prompt</h2>
+        <p>Add a new image and prompt to the collection.</p>
+    </div>
+    <div class="upload-card">
+        <form method="POST" action="{{ url_for('dashboard') }}" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="image">Select Image</label>
+                <div class="file-input-wrapper">
+                    <input type="file" id="image" name="image" accept="image/*" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="prompt_text">Prompt Text</label>
+                <textarea id="prompt_text" name="prompt_text" rows="5" required
+                    placeholder="Enter the prompt description here..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Upload Prompt</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

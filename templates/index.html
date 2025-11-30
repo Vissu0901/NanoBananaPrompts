@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<section class="hero">
+    <div class="hero-content">
+        <h1>Welcome to <span class="highlight">Banana Nano</span> Prompts</h1>
+        <p>Explore a curated collection of creative prompts uploaded by our admins. Scroll down to get inspired!</p>
+    </div>
+</section>
+
+<section class="prompts-grid">
+    {% for prompt in prompts %}
+    <div class="card">
+        <div class="card-image">
+            <img src="{{ url_for('static', filename='uploads/' + prompt.image_filename) }}" alt="Prompt Image">
+        </div>
+        <div class="card-content">
+            <p class="prompt-text">{{ prompt.prompt_text }}</p>
+        </div>
+    </div>
+    {% else %}
+    <div class="no-prompts">
+        <p>No prompts available yet. Check back later!</p>
+    </div>
+    {% endfor %}
+</section>
+{% endblock %}
