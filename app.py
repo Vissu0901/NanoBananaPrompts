@@ -3,13 +3,14 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from flask_pymongo import PyMongo
 from werkzeug.utils import secure_filename
 import gridfs
+import certifi
 
 app = Flask(__name__)
 app.secret_key = 'banana_nano_secret_key'
 
 # MongoDB Configuration
 app.config["MONGO_URI"] = "mongodb+srv://viswanathvarikutivissu_db_user:OcPz6nWdSuA3LZVl@cluster0.r651jwd.mongodb.net/banana_prompts?appName=Cluster0"
-mongo = PyMongo(app)
+mongo = PyMongo(app, tlsCAFile=certifi.where())
 fs = gridfs.GridFS(mongo.db)
 
 # Admin Credentials
