@@ -1,26 +1,222 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="dashboard-wrapper">
-    <div class="dashboard-header">
-        <h2>Upload New Prompt</h2>
-        <p>Add a new image and prompt to the collection.</p>
-    </div>
-    <div class="upload-card">
-        <form method="POST" action="{{ url_for('dashboard') }}" enctype="multipart/form-data">
-            <div class="form-group">
-                <label for="image">Select Image</label>
-                <div class="file-input-wrapper">
-                    <input type="file" id="image" name="image" accept="image/*" required>
+<div class="dashboard-container">
+    <!-- Left Column: Sticky Upload Panel -->
+    <aside class="dashboard-sidebar">
+        <div class="upload-card sticky-card">
+            <div class="card-header">
+                <h2>Upload New Prompt</h2>
+                <p>Add to your collection</p>
+            </div>
+            <form method="POST" action="{{ url_for('dashboard') }}" enctype="multipart/form-data" class="upload-form">
+                <div class="form-group">
+                    <label class="input-label">Prompt Image</label>
+                    <div class="drop-zone" id="drop-zone">
+                        <span class="drop-zone__prompt">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="feather feather-cloud-upload">
+                                <path
+                                    d="M21.2 15c.7-1.2 1-2.5 1-3.9 0-3.9-3.1-7-7-7-2.4 0-4.5 1.2-5.7 3.1C9.1 7.1 8.6 7 8 7c-2.8 0-5 2.2-5 5 0 .8.2 1.6.5 2.2C2.2 15.3 1 17.2 1 19.4 1 21.9 3.1 24 5.6 24h12.8c3.1 0 5.6-2.5 5.6-5.6 0-1.3-.4-2.4-1-3.4z">
+                                </path>
+                                <polyline points="16 16 12 12 8 16"></polyline>
+                                <line x1="12" y1="12" x2="12" y2="21"></line>
+                            </svg>
+                            <br>Drag & Drop, Click or Paste to Upload
+                        </span>
+                        <input type="file" name="image" class="drop-zone__input" accept="image/*" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="prompt_text" class="input-label">Prompt Text</label>
+                    <textarea id="prompt_text" name="prompt_text" rows="4" required
+                        placeholder="Describe your prompt..." class="resizable-textarea"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    Upload Prompt
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <!-- Right Column: Manage Prompts -->
+    <main class="dashboard-main">
+        <div class="section-header">
+            <h2>Manage Prompts</h2>
+        </div>
+
+        <div class="prompts-grid-modern">
+            {% if prompts %}
+            {% for prompt in prompts %}
+            <div class="modern-card">
+                <div class="card-image-wrapper">
+                    <img src="{{ url_for('uploaded_file', filename=prompt.image_filename) }}" alt="Prompt Image"
+                        loading="lazy">
+                    <div class="card-overlay">
+                        <div class="overlay-actions">
+                            <a href="{{ url_for('edit_prompt', prompt_id=prompt._id) }}" class="icon-btn edit-btn"
+                                title="Edit">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                            </a>
+                            <a href="#" class="icon-btn delete-btn" title="Delete"
+                                onclick="openDeleteModal('{{ url_for('delete_prompt', prompt_id=prompt._id) }}'); return false;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path
+                                        d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2-2v2">
+                                    </path>
+                                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="prompt-preview">{{ prompt.prompt_text }}</p>
                 </div>
             </div>
-            <div class="form-group">
-                <label for="prompt_text">Prompt Text</label>
-                <textarea id="prompt_text" name="prompt_text" rows="5" required
-                    placeholder="Enter the prompt description here..."></textarea>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state">
+                <p>No prompts found. Start by uploading one!</p>
             </div>
-            <button type="submit" class="btn btn-primary">Upload Prompt</button>
-        </form>
+            {% endif %}
+        </div>
+    </main>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content glass-card">
+        <div class="modal-header">
+            <h3>Confirm Deletion</h3>
+            <span class="close-modal" onclick="closeDeleteModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to delete this prompt? This action cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+            <a id="confirmDeleteBtn" href="#" class="btn btn-danger">Delete</a>
+        </div>
     </div>
 </div>
+
+<script>
+    // Modal Logic
+    const deleteModal = document.getElementById('deleteModal');
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+
+    function openDeleteModal(deleteUrl) {
+        confirmDeleteBtn.href = deleteUrl;
+        deleteModal.style.display = 'flex';
+    }
+
+    function closeDeleteModal() {
+        deleteModal.style.display = 'none';
+    }
+
+    // Close modal if clicking outside
+    window.onclick = function (event) {
+        if (event.target == deleteModal) {
+            closeDeleteModal();
+        }
+    }
+
+    // Simple script to handle drag & drop visual feedback
+    document.querySelectorAll(".drop-zone__input").forEach((inputElement) => {
+        const dropZoneElement = inputElement.closest(".drop-zone");
+
+        dropZoneElement.addEventListener("click", (e) => {
+            inputElement.click();
+        });
+
+        inputElement.addEventListener("change", (e) => {
+            if (inputElement.files.length) {
+                updateThumbnail(dropZoneElement, inputElement.files[0]);
+            }
+        });
+
+        dropZoneElement.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            dropZoneElement.classList.add("drop-zone--over");
+        });
+
+        ["dragleave", "dragend"].forEach((type) => {
+            dropZoneElement.addEventListener(type, (e) => {
+                dropZoneElement.classList.remove("drop-zone--over");
+            });
+        });
+
+        dropZoneElement.addEventListener("drop", (e) => {
+            e.preventDefault();
+
+            if (e.dataTransfer.files.length) {
+                inputElement.files = e.dataTransfer.files;
+                updateThumbnail(dropZoneElement, e.dataTransfer.files[0]);
+            }
+
+            dropZoneElement.classList.remove("drop-zone--over");
+        });
+
+        // Handle Paste Event
+        document.addEventListener('paste', (e) => {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (let index in items) {
+                const item = items[index];
+                if (item.kind === 'file' && item.type.startsWith('image/')) {
+                    const blob = item.getAsFile();
+                    const file = new File([blob], "pasted_image.png", { type: blob.type });
+
+                    // Create a DataTransfer to update the file input
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    inputElement.files = dataTransfer.files;
+
+                    updateThumbnail(dropZoneElement, file);
+                    break; // Only take the first image
+                }
+            }
+        });
+    });
+
+    function updateThumbnail(dropZoneElement, file) {
+        let thumbnailElement = dropZoneElement.querySelector(".drop-zone__thumb");
+
+        // First time - remove the prompt
+        if (dropZoneElement.querySelector(".drop-zone__prompt")) {
+            dropZoneElement.querySelector(".drop-zone__prompt").remove();
+        }
+
+        // First time - there is no thumbnail element, so lets create it
+        if (!thumbnailElement) {
+            thumbnailElement = document.createElement("div");
+            thumbnailElement.classList.add("drop-zone__thumb");
+            dropZoneElement.appendChild(thumbnailElement);
+        }
+
+        thumbnailElement.dataset.label = file.name;
+
+        // Show thumbnail for image files
+        if (file.type.startsWith("image/")) {
+            const reader = new FileReader();
+
+            reader.readAsDataURL(file);
+            reader.onload = () => {
+                thumbnailElement.style.backgroundImage = `url('${reader.result}')`;
+            };
+        } else {
+            thumbnailElement.style.backgroundImage = null;
+        }
+    }
+</script>
 {% endblock %}

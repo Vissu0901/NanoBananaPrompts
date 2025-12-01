@@ -95,7 +95,73 @@ def dashboard():
             flash('Prompt uploaded successfully!', 'success')
             return redirect(url_for('dashboard'))
             
-    return render_template('dashboard.html')
+    prompts = list(mongo.db.prompts.find())
+    return render_template('dashboard.html', prompts=prompts)
+
+@app.route('/delete/<prompt_id>')
+def delete_prompt(prompt_id):
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin'))
+    
+    from bson.objectid import ObjectId
+    prompt = mongo.db.prompts.find_one({'_id': ObjectId(prompt_id)})
+    
+    if prompt:
+        # Delete image from GridFS
+        grid_out = fs.find_one({'filename': prompt['image_filename']})
+        if grid_out:
+            fs.delete(grid_out._id)
+            
+        # Delete prompt from DB
+        mongo.db.prompts.delete_one({'_id': ObjectId(prompt_id)})
+        flash('Prompt deleted successfully!', 'success')
+    else:
+        flash('Prompt not found.', 'danger')
+        
+    return redirect(url_for('dashboard'))
+
+@app.route('/edit/<prompt_id>', methods=['GET', 'POST'])
+def edit_prompt(prompt_id):
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin'))
+        
+    from bson.objectid import ObjectId
+    prompt = mongo.db.prompts.find_one({'_id': ObjectId(prompt_id)})
+    
+    if not prompt:
+        flash('Prompt not found.', 'danger')
+        return redirect(url_for('dashboard'))
+        
+    if request.method == 'POST':
+        prompt_text = request.form['prompt_text']
+        
+        update_data = {'prompt_text': prompt_text}
+        
+        if 'image' in request.files:
+            file = request.files['image']
+            if file and file.filename != '':
+                filename = secure_filename(file.filename)
+                
+                # Delete old image
+                grid_out = fs.find_one({'filename': prompt['image_filename']})
+                if grid_out:
+                    fs.delete(grid_out._id)
+                
+                # Save new image
+                # Check if file already exists in GridFS
+                if fs.exists(filename=filename):
+                     old_file = fs.find_one({'filename': filename})
+                     if old_file:
+                         fs.delete(old_file._id)
+
+                fs.put(file, filename=filename, content_type=file.content_type)
+                update_data['image_filename'] = filename
+        
+        mongo.db.prompts.update_one({'_id': ObjectId(prompt_id)}, {'$set': update_data})
+        flash('Prompt updated successfully!', 'success')
+        return redirect(url_for('dashboard'))
+        
+    return render_template('edit_prompt.html', prompt=prompt)
 
 @app.route('/logout')
 def logout():
