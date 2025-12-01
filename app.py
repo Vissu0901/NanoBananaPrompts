@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file, Response
 from flask_pymongo import PyMongo
 from werkzeug.utils import secure_filename
 import gridfs
@@ -169,9 +169,24 @@ def logout():
     flash('You have been logged out.', 'info')
     return redirect(url_for('home'))
 
-@app.route('/sitemap.xml')
+@app.route('/sitemap.xml', methods=['GET'])
 def sitemap():
-    return send_file('static/sitemap.xml', mimetype='application/xml')
+    xml_content = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+   <url>
+      <loc>https://banana-nano-prompts.vercel.app/</loc>
+      <lastmod>2024-12-01</lastmod>
+      <changefreq>daily</changefreq>
+      <priority>1.0</priority>
+   </url>
+   <url>
+      <loc>https://banana-nano-prompts.vercel.app/admin</loc>
+      <lastmod>2024-12-01</lastmod>
+      <changefreq>monthly</changefreq>
+      <priority>0.5</priority>
+   </url>
+</urlset>"""
+    return Response(xml_content, mimetype='application/xml')
 
 if __name__ == '__main__':
     app.run(debug=True)

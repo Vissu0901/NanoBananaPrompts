@@ -8,14 +8,26 @@
     </div>
 </section>
 
-<section class="prompts-grid">
+<section class="prompts-grid-modern">
     {% for prompt in prompts %}
-    <div class="card">
-        <div class="card-image">
-            <img src="{{ url_for('uploaded_file', filename=prompt.image_filename) }}" alt="Prompt Image">
+    <div class="modern-card">
+        <div class="card-image-wrapper">
+            <img src="{{ url_for('uploaded_file', filename=prompt.image_filename) }}" alt="Prompt Image" loading="lazy">
+            <div class="card-overlay">
+                <div class="overlay-actions">
+                    <button class="icon-btn copy-btn" data-prompt="{{ prompt.prompt_text }}" onclick="copyPrompt(this)"
+                        title="Copy Prompt">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
         </div>
-        <div class="card-content">
-            <p class="prompt-text">{{ prompt.prompt_text }}</p>
+        <div class="card-body">
+            <p class="prompt-preview">{{ prompt.prompt_text }}</p>
         </div>
     </div>
     {% else %}
@@ -24,4 +36,32 @@
     </div>
     {% endfor %}
 </section>
+
+<script>
+    function copyPrompt(btn) {
+        const text = btn.getAttribute('data-prompt');
+        navigator.clipboard.writeText(text).then(() => {
+            const originalHTML = btn.innerHTML;
+            // Checkmark icon
+            btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+            btn.classList.add('copied');
+
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.classList.remove('copied');
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+            alert('Failed to copy prompt.');
+        });
+    }
+</script>
+
+<style>
+    .copy-btn.copied {
+        color: #4caf50;
+        border-color: #4caf50;
+        background: rgba(76, 175, 80, 0.1);
+    }
+</style>
 {% endblock %}
