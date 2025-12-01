@@ -169,5 +169,9 @@ def logout():
     flash('You have been logged out.', 'info')
     return redirect(url_for('home'))
 
+@app.route('/sitemap.xml')
+def sitemap():
+    return send_file('static/sitemap.xml', mimetype='application/xml')
+
 if __name__ == '__main__':
     app.run(debug=True)
